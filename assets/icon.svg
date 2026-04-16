@@ -1,0 +1,15 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo principal -->
+  <rect x="15" y="15" width="90" height="90" rx="22" fill="#1976D2"/>
+
+  <!-- Tarjeta interna -->
+  <rect x="30" y="30" width="60" height="60" rx="12" fill="#fbf9fb"/>
+
+  <!-- Check central -->
+  <polyline points="40,60 55,75 80,45" 
+            fill="none" 
+            stroke="#0D47A1" 
+            stroke-width="10" 
+            stroke-linecap="round" 
+            stroke-linejoin="round"/>
+</svg>
