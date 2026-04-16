@@ -1,4 +1,4 @@
-# Escuela App
+# Asistix
 
 App móvil en React Native (Expo) para gestión de alumnos de escuelas rurales.
 
