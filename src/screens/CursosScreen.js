@@ -187,7 +187,11 @@ export default function CursosScreen({ navigation }) {
                     navigation.navigate("AsistenciaTomar", { cursoId: item.id })
                   }
                   activeOpacity={0.8}>
-                  <Ionicons name="search" size={16} color={colors.primary} />
+                  <Ionicons
+                    name="search"
+                    size={16}
+                    color={colors.primarySurface}
+                  />
                   <Text style={styles.asistenciaBtnText}>Asistencia</Text>
                 </TouchableOpacity>
               </View>
@@ -374,9 +378,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: colors.border,
     paddingVertical: spacing.sm + 2,
-    backgroundColor: colors.primarySurface,
+    backgroundColor: colors.primary,
   },
-  asistenciaBtnText: { fontSize: 13, fontWeight: "600", color: colors.primary },
+  asistenciaBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.primarySurface,
+  },
 });
 
 const modal = StyleSheet.create({
