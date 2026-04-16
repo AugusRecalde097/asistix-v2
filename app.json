@@ -21,7 +21,7 @@
       "package": "com.asistix.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icon.svg"
     },
     "plugins": [
       "expo-font"

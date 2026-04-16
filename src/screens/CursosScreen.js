@@ -187,11 +187,7 @@ export default function CursosScreen({ navigation }) {
                     navigation.navigate("AsistenciaTomar", { cursoId: item.id })
                   }
                   activeOpacity={0.8}>
-                  <Ionicons
-                    name="checkmark-done-outline"
-                    size={16}
-                    color={colors.primary}
-                  />
+                  <Ionicons name="search" size={16} color={colors.primary} />
                   <Text style={styles.asistenciaBtnText}>Asistencia</Text>
                 </TouchableOpacity>
               </View>
