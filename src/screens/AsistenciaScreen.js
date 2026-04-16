@@ -108,7 +108,8 @@ function ResumenChips({ registros }) {
 
 // ─── Fila de alumno ───────────────────────────────────────────────
 function AlumnoRow({ alumno, estado, onToggle }) {
-  const est = estadoMap[estado] || estadoMap["presente"];
+  // const est = estadoMap[estado] || estadoMap["presente"];
+  const est = estadoMap[estado];
   return (
     <View style={row.container}>
       <Avatar
@@ -195,7 +196,7 @@ export default function AsistenciaScreen({ route, navigation }) {
         // Por defecto todos presentes
         const map = {};
         alumnos.forEach((a) => {
-          map[a.id] = "presente";
+          map[a.id] = "";
         });
         setRegistros(map);
         setGuardado(false);
@@ -222,7 +223,8 @@ export default function AsistenciaScreen({ route, navigation }) {
     setSaving(true);
     const regs = alumnos.map((a) => ({
       alumnoId: a.id,
-      estado: registros[a.id] || "presente",
+      estado: registros[a.id],
+      // estado: registros[a.id] || "presente",
     }));
     await saveAsistencia(cursoId, fecha, regs);
     setSaving(false);
@@ -242,7 +244,8 @@ export default function AsistenciaScreen({ route, navigation }) {
 
   const regsArray = alumnos.map((a) => ({
     alumnoId: a.id,
-    estado: registros[a.id] || "presente",
+    estado: registros[a.id],
+    // estado: registros[a.id] || "presente",
   }));
 
   if (loading) {
@@ -342,7 +345,8 @@ export default function AsistenciaScreen({ route, navigation }) {
           renderItem={({ item }) => (
             <AlumnoRow
               alumno={item}
-              estado={registros[item.id] || "presente"}
+              estado={registros[item.id]}
+              // estado={registros[item.id] || "presente"}
               onToggle={toggleEstado}
             />
           )}
