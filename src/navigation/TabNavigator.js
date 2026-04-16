@@ -11,9 +11,22 @@ import CursosScreen from '../screens/CursosScreen';
 import EscuelasScreen from '../screens/EscuelasScreen';
 import LocalidadesScreen from '../screens/LocalidadesScreen';
 import ReportesScreen from '../screens/ReportesScreen';
+import AsistenciaScreen from '../screens/AsistenciaScreen';
+import AsistenciaHistorialScreen from '../screens/AsistenciaHistorialScreen';
 
 const Tab = createBottomTabNavigator();
 const AlumnosStack = createNativeStackNavigator();
+const CursosStack = createNativeStackNavigator();
+
+function CursosStackNavigator() {
+  return (
+    <CursosStack.Navigator screenOptions={{ headerShown: false }}>
+      <CursosStack.Screen name="CursosList" component={CursosScreen} />
+      <CursosStack.Screen name="AsistenciaTomar" component={AsistenciaScreen} />
+      <CursosStack.Screen name="AsistenciaHistorial" component={AsistenciaHistorialScreen} />
+    </CursosStack.Navigator>
+  );
+}
 
 function AlumnosStackNavigator() {
   return (
@@ -56,7 +69,7 @@ export default function TabNavigator() {
       })}
     >
       <Tab.Screen name="Alumnos" component={AlumnosStackNavigator} />
-      <Tab.Screen name="Cursos" component={CursosScreen} />
+      <Tab.Screen name="Cursos" component={CursosStackNavigator} />
       <Tab.Screen name="Escuelas" component={EscuelasScreen} />
       <Tab.Screen name="Localidades" component={LocalidadesScreen} />
       <Tab.Screen name="Reportes" component={ReportesScreen} />
