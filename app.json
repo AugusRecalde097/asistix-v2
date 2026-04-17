@@ -8,7 +8,8 @@
     "userInterfaceStyle": "light",
     "splash": {
       "resizeMode": "contain",
-      "backgroundColor": "#1565C0"
+      "backgroundColor": "#1565C0",
+      "image": "./assets/icon.png"
     },
     "ios": {
       "supportsTablet": true,
@@ -16,7 +17,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#1565C0"
+        "backgroundColor": "#1565C0",
+        "foregroundImage": "./assets/icon.png"
       },
       "package": "com.asistix.app"
     },
@@ -24,6 +26,14 @@
       "favicon": "./assets/icon.svg"
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#1565C0"
+        }
+      ],
       "expo-font",
       "expo-sqlite"
     ],
