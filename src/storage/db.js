@@ -1,192 +1,347 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { openDatabaseAsync } from "expo-sqlite";
 
-const KEYS = {
-  LOCALIDADES: "@escuela:localidades",
-  ESCUELAS: "@escuela:escuelas",
-  CURSOS: "@escuela:cursos",
-  ALUMNOS: "@escuela:alumnos",
-};
-
-const getAll = async (key) => {
-  try {
-    const raw = await AsyncStorage.getItem(key);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveAll = async (key, data) => {
-  await AsyncStorage.setItem(key, JSON.stringify(data));
-};
+const DB_NAME = "asistix.db";
+let dbPromise;
+let initialized = false;
 
 const generateId = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
+const getDb = async () => {
+  if (!dbPromise) dbPromise = openDatabaseAsync(DB_NAME);
+  return dbPromise;
+};
+
+const initDb = async () => {
+  if (initialized) return;
+  const db = await getDb();
+
+  await db.execAsync(`
+    PRAGMA journal_mode = WAL;
+
+    CREATE TABLE IF NOT EXISTS localidades (
+      id TEXT PRIMARY KEY NOT NULL,
+      nombre TEXT NOT NULL,
+      provincia TEXT,
+      createdAt TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS escuelas (
+      id TEXT PRIMARY KEY NOT NULL,
+      nombre TEXT NOT NULL,
+      localidadId TEXT,
+      createdAt TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS cursos (
+      id TEXT PRIMARY KEY NOT NULL,
+      nombre TEXT NOT NULL,
+      escuelaId TEXT,
+      anio INTEGER,
+      division TEXT,
+      createdAt TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS alumnos (
+      id TEXT PRIMARY KEY NOT NULL,
+      apellido TEXT,
+      nombre TEXT,
+      dni TEXT,
+      fechaNacimiento TEXT,
+      cursoId TEXT,
+      telefono TEXT,
+      direccion TEXT,
+      createdAt TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS asistencias (
+      id TEXT PRIMARY KEY NOT NULL,
+      cursoId TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      registros TEXT NOT NULL,
+      updatedAt TEXT,
+      UNIQUE(cursoId, fecha)
+    );
+  `);
+
+  initialized = true;
+};
+
+const getRows = async (table) => {
+  await initDb();
+  const db = await getDb();
+  return db.getAllAsync(`SELECT * FROM ${table}`);
+};
+
+const removeById = async (table, id) => {
+  await initDb();
+  const db = await getDb();
+  await db.runAsync(`DELETE FROM ${table} WHERE id = ?`, [id]);
+};
+
 // LOCALIDADES
-export const getLocalidades = () => getAll(KEYS.LOCALIDADES);
+export const getLocalidades = () => getRows("localidades");
 export const saveLocalidad = async (localidad) => {
-  const all = await getLocalidades();
+  await initDb();
+  const db = await getDb();
   const item = {
     ...localidad,
     id: localidad.id || generateId(),
     createdAt: localidad.createdAt || new Date().toISOString(),
   };
-  const idx = all.findIndex((l) => l.id === item.id);
-  if (idx >= 0) all[idx] = item;
-  else all.push(item);
-  await saveAll(KEYS.LOCALIDADES, all);
+
+  await db.runAsync(
+    `INSERT INTO localidades (id, nombre, provincia, createdAt)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+      nombre = excluded.nombre,
+      provincia = excluded.provincia,
+      createdAt = excluded.createdAt`,
+    [item.id, item.nombre, item.provincia ?? null, item.createdAt],
+  );
+
   return item;
 };
-export const deleteLocalidad = async (id) => {
-  const all = await getLocalidades();
-  await saveAll(
-    KEYS.LOCALIDADES,
-    all.filter((l) => l.id !== id),
-  );
-};
+export const deleteLocalidad = async (id) => removeById("localidades", id);
 
 // ESCUELAS
-export const getEscuelas = () => getAll(KEYS.ESCUELAS);
+export const getEscuelas = () => getRows("escuelas");
 export const saveEscuela = async (escuela) => {
-  const all = await getEscuelas();
+  await initDb();
+  const db = await getDb();
   const item = {
     ...escuela,
     id: escuela.id || generateId(),
     createdAt: escuela.createdAt || new Date().toISOString(),
   };
-  const idx = all.findIndex((e) => e.id === item.id);
-  if (idx >= 0) all[idx] = item;
-  else all.push(item);
-  await saveAll(KEYS.ESCUELAS, all);
+
+  await db.runAsync(
+    `INSERT INTO escuelas (id, nombre, localidadId, createdAt)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+      nombre = excluded.nombre,
+      localidadId = excluded.localidadId,
+      createdAt = excluded.createdAt`,
+    [item.id, item.nombre, item.localidadId ?? null, item.createdAt],
+  );
+
   return item;
 };
-export const deleteEscuela = async (id) => {
-  const all = await getEscuelas();
-  await saveAll(
-    KEYS.ESCUELAS,
-    all.filter((e) => e.id !== id),
-  );
-};
+export const deleteEscuela = async (id) => removeById("escuelas", id);
 
 // CURSOS
-export const getCursos = () => getAll(KEYS.CURSOS);
+export const getCursos = () => getRows("cursos");
 export const saveCurso = async (curso) => {
-  const all = await getCursos();
+  await initDb();
+  const db = await getDb();
   const item = {
     ...curso,
     id: curso.id || generateId(),
     createdAt: curso.createdAt || new Date().toISOString(),
   };
-  const idx = all.findIndex((c) => c.id === item.id);
-  if (idx >= 0) all[idx] = item;
-  else all.push(item);
-  await saveAll(KEYS.CURSOS, all);
+
+  await db.runAsync(
+    `INSERT INTO cursos (id, nombre, escuelaId, anio, division, createdAt)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+      nombre = excluded.nombre,
+      escuelaId = excluded.escuelaId,
+      anio = excluded.anio,
+      division = excluded.division,
+      createdAt = excluded.createdAt`,
+    [
+      item.id,
+      item.nombre,
+      item.escuelaId ?? null,
+      item.anio ?? null,
+      item.division ?? null,
+      item.createdAt,
+    ],
+  );
+
   return item;
 };
-export const deleteCurso = async (id) => {
-  const all = await getCursos();
-  await saveAll(
-    KEYS.CURSOS,
-    all.filter((c) => c.id !== id),
-  );
-};
+export const deleteCurso = async (id) => removeById("cursos", id);
 
 // ALUMNOS
-export const getAlumnos = () => getAll(KEYS.ALUMNOS);
+export const getAlumnos = () => getRows("alumnos");
 export const saveAlumno = async (alumno) => {
-  const all = await getAlumnos();
+  await initDb();
+  const db = await getDb();
   const item = {
     ...alumno,
     id: alumno.id || generateId(),
     createdAt: alumno.createdAt || new Date().toISOString(),
   };
-  const idx = all.findIndex((a) => a.id === item.id);
-  if (idx >= 0) all[idx] = item;
-  else all.push(item);
-  await saveAll(KEYS.ALUMNOS, all);
+
+  await db.runAsync(
+    `INSERT INTO alumnos (
+      id, apellido, nombre, dni, fechaNacimiento, cursoId, telefono, direccion, createdAt
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      apellido = excluded.apellido,
+      nombre = excluded.nombre,
+      dni = excluded.dni,
+      fechaNacimiento = excluded.fechaNacimiento,
+      cursoId = excluded.cursoId,
+      telefono = excluded.telefono,
+      direccion = excluded.direccion,
+      createdAt = excluded.createdAt`,
+    [
+      item.id,
+      item.apellido ?? null,
+      item.nombre ?? null,
+      item.dni ?? null,
+      item.fechaNacimiento ?? null,
+      item.cursoId ?? null,
+      item.telefono ?? null,
+      item.direccion ?? null,
+      item.createdAt,
+    ],
+  );
+
   return item;
 };
-export const deleteAlumno = async (id) => {
-  const all = await getAlumnos();
-  await saveAll(
-    KEYS.ALUMNOS,
-    all.filter((a) => a.id !== id),
-  );
+export const deleteAlumno = async (id) => removeById("alumnos", id);
+
+// ASISTENCIA
+const mapAsistencia = (row) => ({
+  ...row,
+  registros: JSON.parse(row.registros || "[]"),
+});
+
+export const getAsistencias = async () => {
+  const rows = await getRows("asistencias");
+  return rows.map(mapAsistencia);
 };
 
-// ─── ASISTENCIA ───────────────────────────────────────────────────
-// Estructura de cada registro:
-// { id, cursoId, fecha (YYYY-MM-DD), registros: [{ alumnoId, estado }] }
-// estado: 'presente' | 'ausente' | 'tardanza' | 'justificado'
-
-const ASISTENCIA_KEY = "@escuela:asistencia";
-
-export const getAsistencias = () => getAll(ASISTENCIA_KEY);
-
 export const getAsistenciaPorCursoFecha = async (cursoId, fecha) => {
-  const all = await getAsistencias();
-  return all.find((a) => a.cursoId === cursoId && a.fecha === fecha) || null;
+  await initDb();
+  const db = await getDb();
+  const row = await db.getFirstAsync(
+    `SELECT * FROM asistencias WHERE cursoId = ? AND fecha = ?`,
+    [cursoId, fecha],
+  );
+  return row ? mapAsistencia(row) : null;
 };
 
 export const getAsistenciasPorCurso = async (cursoId) => {
-  const all = await getAsistencias();
-  return all
-    .filter((a) => a.cursoId === cursoId)
-    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+  await initDb();
+  const db = await getDb();
+  const rows = await db.getAllAsync(
+    `SELECT * FROM asistencias WHERE cursoId = ? ORDER BY fecha DESC`,
+    [cursoId],
+  );
+  return rows.map(mapAsistencia);
 };
 
 export const getAsistenciasPorAlumno = async (alumnoId) => {
   const all = await getAsistencias();
   const resultado = [];
+
   for (const asist of all) {
     const reg = asist.registros?.find((r) => r.alumnoId === alumnoId);
-    if (reg)
+    if (reg) {
       resultado.push({
         fecha: asist.fecha,
         cursoId: asist.cursoId,
         estado: reg.estado,
       });
+    }
   }
+
   return resultado.sort((a, b) => b.fecha.localeCompare(a.fecha));
 };
 
 export const saveAsistencia = async (cursoId, fecha, registros) => {
-  const all = await getAsistencias();
-  const idx = all.findIndex((a) => a.cursoId === cursoId && a.fecha === fecha);
+  await initDb();
+  const db = await getDb();
+
+  const existing = await db.getFirstAsync(
+    `SELECT id FROM asistencias WHERE cursoId = ? AND fecha = ?`,
+    [cursoId, fecha],
+  );
+
   const item = {
-    id: idx >= 0 ? all[idx].id : generateId(),
+    id: existing?.id || generateId(),
     cursoId,
     fecha,
     registros,
     updatedAt: new Date().toISOString(),
   };
-  if (idx >= 0) all[idx] = item;
-  else all.push(item);
-  await saveAll(ASISTENCIA_KEY, all);
+
+  await db.runAsync(
+    `INSERT INTO asistencias (id, cursoId, fecha, registros, updatedAt)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(cursoId, fecha) DO UPDATE SET
+      id = excluded.id,
+      registros = excluded.registros,
+      updatedAt = excluded.updatedAt`,
+    [
+      item.id,
+      item.cursoId,
+      item.fecha,
+      JSON.stringify(item.registros ?? []),
+      item.updatedAt,
+    ],
+  );
+
   return item;
 };
 
 export const deleteAsistencia = async (cursoId, fecha) => {
-  const all = await getAsistencias();
-  await saveAll(
-    ASISTENCIA_KEY,
-    all.filter((a) => !(a.cursoId === cursoId && a.fecha === fecha)),
+  await initDb();
+  const db = await getDb();
+  await db.runAsync(
+    `DELETE FROM asistencias WHERE cursoId = ? AND fecha = ?`,
+    [cursoId, fecha],
   );
+};
+
+// API para hooks
+export const LocalidadesDB = {
+  getAll: getLocalidades,
+  save: saveLocalidad,
+  remove: deleteLocalidad,
+};
+
+export const EscuelasDB = {
+  getAll: getEscuelas,
+  save: saveEscuela,
+  remove: deleteEscuela,
+};
+
+export const CursosDB = {
+  getAll: getCursos,
+  save: saveCurso,
+  remove: deleteCurso,
+};
+
+export const AlumnosDB = {
+  getAll: getAlumnos,
+  save: saveAlumno,
+  remove: deleteAlumno,
 };
 
 // SEED
 export const seedDemoData = async () => {
   const localidades = await getLocalidades();
   if (localidades.length > 0) return;
+
   const loc1 = { id: "loc1", nombre: "San Javier", provincia: "Santa Fe" };
   const loc2 = { id: "loc2", nombre: "Alejandra", provincia: "Santa Fe" };
   const loc3 = { id: "loc3", nombre: "Romang", provincia: "Santa Fe" };
-  await saveAll(KEYS.LOCALIDADES, [loc1, loc2, loc3]);
+  await Promise.all([
+    saveLocalidad(loc1),
+    saveLocalidad(loc2),
+    saveLocalidad(loc3),
+  ]);
+
   const esc1 = { id: "esc1", nombre: "E.P. N°5", localidadId: "loc1" };
   const esc2 = { id: "esc2", nombre: "E.P. N°2", localidadId: "loc2" };
   const esc3 = { id: "esc3", nombre: "E.P. N°7", localidadId: "loc3" };
-  await saveAll(KEYS.ESCUELAS, [esc1, esc2, esc3]);
+  await Promise.all([saveEscuela(esc1), saveEscuela(esc2), saveEscuela(esc3)]);
+
   const cur1 = {
     id: "cur1",
     nombre: "3° A",
@@ -215,9 +370,15 @@ export const seedDemoData = async () => {
     anio: 3,
     division: "B",
   };
-  await saveAll(KEYS.CURSOS, [cur1, cur2, cur3, cur4]);
-  await saveAll(KEYS.ALUMNOS, [
-    {
+  await Promise.all([
+    saveCurso(cur1),
+    saveCurso(cur2),
+    saveCurso(cur3),
+    saveCurso(cur4),
+  ]);
+
+  await Promise.all([
+    saveAlumno({
       id: "al1",
       apellido: "Gómez",
       nombre: "María",
@@ -226,9 +387,8 @@ export const seedDemoData = async () => {
       cursoId: "cur1",
       telefono: "3482123456",
       direccion: "Rivadavia 123",
-      createdAt: new Date().toISOString(),
-    },
-    {
+    }),
+    saveAlumno({
       id: "al2",
       apellido: "Rodríguez",
       nombre: "Lucas",
@@ -237,9 +397,8 @@ export const seedDemoData = async () => {
       cursoId: "cur2",
       telefono: "3482234567",
       direccion: "San Martín 45",
-      createdAt: new Date().toISOString(),
-    },
-    {
+    }),
+    saveAlumno({
       id: "al3",
       apellido: "Fernández",
       nombre: "Paula",
@@ -248,9 +407,8 @@ export const seedDemoData = async () => {
       cursoId: "cur1",
       telefono: "3482345678",
       direccion: "Belgrano 78",
-      createdAt: new Date().toISOString(),
-    },
-    {
+    }),
+    saveAlumno({
       id: "al4",
       apellido: "Torres",
       nombre: "Santiago",
@@ -259,9 +417,8 @@ export const seedDemoData = async () => {
       cursoId: "cur3",
       telefono: "3482456789",
       direccion: "Mitre 200",
-      createdAt: new Date().toISOString(),
-    },
-    {
+    }),
+    saveAlumno({
       id: "al5",
       apellido: "López",
       nombre: "Daniela",
@@ -270,9 +427,8 @@ export const seedDemoData = async () => {
       cursoId: "cur2",
       telefono: "3482567890",
       direccion: "Sarmiento 55",
-      createdAt: new Date().toISOString(),
-    },
-    {
+    }),
+    saveAlumno({
       id: "al6",
       apellido: "Martínez",
       nombre: "Tomás",
@@ -281,7 +437,6 @@ export const seedDemoData = async () => {
       cursoId: "cur4",
       telefono: "3482678901",
       direccion: "Urquiza 12",
-      createdAt: new Date().toISOString(),
-    },
+    }),
   ]);
 };
