@@ -188,9 +188,10 @@ export default function CursosScreen({ navigation }) {
                   }
                   activeOpacity={0.8}>
                   <Ionicons
+                    // name="checkmark-done-outline"
                     name="search"
                     size={16}
-                    color={colors.primarySurface}
+                    color={colors.borderLight}
                   />
                   <Text style={styles.asistenciaBtnText}>Asistencia</Text>
                 </TouchableOpacity>
@@ -378,12 +379,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: colors.border,
     paddingVertical: spacing.sm + 2,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
   asistenciaBtnText: {
     fontSize: 13,
     fontWeight: "600",
-    color: colors.primarySurface,
+    color: colors.borderLight,
   },
 });
 
