@@ -1,6 +1,6 @@
 # Asistix
 
-App móvil en React Native (Expo) para gestión de alumnos de escuelas rurales.
+App móvil en React Native (Expo) para gestión de alumnos de escuelas y colegios.
 
 ## Características
 
@@ -9,7 +9,8 @@ App móvil en React Native (Expo) para gestión de alumnos de escuelas rurales.
 - **Escuelas**: cada escuela pertenece a una localidad
 - **Localidades**: pueblos o localidades que agrupan escuelas
 - **Reportes**: estadísticas de alumnos por localidad y por curso
-- Datos 100% locales con AsyncStorage (sin internet)
+- **Asistencia**: registro de la asistencia de cada alumno por curso con 4 estados ( PRESENTE | AUSENTE | TARDANZA | JUSTIFICADO )
+- Datos 100% locales con base de datos SQLite (sin internet)
 - Compatible con celulares y tablets
 - Safe Area para notch (iPhone X en adelante)
 - Tab bar con íconos en la parte inferior
@@ -64,7 +65,7 @@ Al iniciar por primera vez se cargan datos de demo:
 
 ## Notas técnicas
 
-- Los datos se persisten localmente con `@react-native-async-storage/async-storage`
+- Los datos se persisten localmente con `@expo-sqlite`
 - No requiere conexión a internet
 - La navegación de Alumnos usa un Stack dentro del Tab (lista → detalle → form)
 - Los formularios de Cursos, Escuelas y Localidades usan Modales bottom-sheet
